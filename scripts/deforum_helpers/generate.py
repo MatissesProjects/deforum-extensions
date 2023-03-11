@@ -10,13 +10,18 @@ from .rich import console
 import cv2
 from .animation import sample_from_cv2, sample_to_cv2
 from modules import processing, sd_models
-from modules.shared import opts, sd_model
+from modules.shared import opts, sd_model, interrogator
 from modules.processing import process_images, StableDiffusionProcessingTxt2Img
 from .deforum_controlnet import is_controlnet_enabled, process_txt2img_with_controlnet, process_img2img_with_controlnet
 
-import math, json, itertools
+import math, json
 import requests
 
+<<<<<<< Updated upstream
+=======
+import numexpr
+
+>>>>>>> Stashed changes
 def load_mask_latent(mask_input, shape):
     # mask_input (str or PIL Image.Image): Path to the mask image or a PIL Image object
     # shape (list-like len(4)): shape of the image to match, usually latent_image.shape
@@ -45,10 +50,10 @@ def isJson(myjson):
 
 # Add pairwise implementation here not to upgrade
 # the whole python to 3.10 just for one function
-def pairwise_repl(iterable):
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
+# def pairwise_repl(iterable):
+#     a, b = itertools.tee(iterable)
+#     next(b, None)
+#     return zip(a, b)
 
 def generate(args, keys, anim_args, loop_args, controlnet_args, root, frame = 0, return_sample=False, sampler_name=None):
     assert args.prompt is not None
@@ -78,6 +83,7 @@ def generate(args, keys, anim_args, loop_args, controlnet_args, root, frame = 0,
         tweeningFrames = loop_args.tweeningFrameSchedule
         blendFactor = .07
         colorCorrectionFactor = loop_args.colorCorrectionFactor
+<<<<<<< Updated upstream
         jsonImages = json.loads(loop_args.imagesToKeyframe)
         framesToImageSwapOn = list(map(int, list(jsonImages.keys())))
         # find which image to show
@@ -92,11 +98,16 @@ def generate(args, keys, anim_args, loop_args, controlnet_args, root, frame = 0,
                 skipFrame = fe - fs
 
         if frame % skipFrame <= tweeningFrames: # number of tweening frames
+=======
+        max_f = anim_args.max_frames - 1
+
+        if frame % loop_args.skipFrame <= tweeningFrames: # number of tweening frames
+>>>>>>> Stashed changes
             blendFactor = loop_args.blendFactorMax - loop_args.blendFactorSlope*math.cos((frame % tweeningFrames) / (tweeningFrames / 2))
-        init_image2, _ = load_img(list(jsonImages.values())[frameToChoose],
+        init_image2, _ = load_img(list(loop_args.jsonImages.values())[loop_args.frameToChoose],
                                 shape=(args.W, args.H),
                                 use_alpha_as_mask=args.use_alpha_as_mask)
-        image_init0 = list(jsonImages.values())[0]
+        image_init0 = list(loop_args.jsonImages.values())[0]
             
     else: # they passed in a single init image
         image_init0 = args.init_image

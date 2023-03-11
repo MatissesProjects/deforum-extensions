@@ -52,6 +52,7 @@ class LooperAnimKeys():
     def __init__(self, loop_args, anim_args):
         self.use_looper = loop_args.use_looper
         self.imagesToKeyframe = loop_args.init_images
+<<<<<<< Updated upstream
         self.image_strength_schedule_series = get_inbetweens(parse_key_frames(loop_args.image_strength_schedule), anim_args.max_frames)
         self.blendFactorMax_series = get_inbetweens(parse_key_frames(loop_args.blendFactorMax), anim_args.max_frames)
         self.blendFactorSlope_series = get_inbetweens(parse_key_frames(loop_args.blendFactorSlope), anim_args.max_frames)
@@ -68,6 +69,28 @@ def get_inbetweens(key_frames, max_frames, integer=False, interp_method='Linear'
                 t = i
                 key_frame_series[i] = value
         if not value_is_number:
+=======
+        self.image_strength_schedule_series = self.fi.get_inbetweens(self.fi.parse_key_frames(loop_args.image_strength_schedule))
+        self.blendFactorMax_series = self.fi.get_inbetweens(self.fi.parse_key_frames(loop_args.blendFactorMax))
+        self.blendFactorSlope_series = self.fi.get_inbetweens(self.fi.parse_key_frames(loop_args.blendFactorSlope))
+        self.tweening_frames_schedule_series = self.fi.get_inbetweens(self.fi.parse_key_frames(loop_args.tweening_frames_schedule))
+        self.color_correction_factor_series = self.fi.get_inbetweens(self.fi.parse_key_frames(loop_args.color_correction_factor))
+        self.frameToChoose = 0
+        self.jsonImages = ""
+        self.skipFrame = 0
+
+class FrameInterpolater():
+    def __init__(self, max_frames=0, seed=-1) -> None:
+        self.max_frames = max_frames
+        self.seed = seed
+
+    def get_inbetweens(self, key_frames, integer=False, interp_method='Linear', is_single_string = False):
+        key_frame_series = pd.Series([np.nan for a in range(self.max_frames)])
+        # get our ui variables set for numexpr.evaluate
+        max_f = self.max_frames -1
+        s = self.seed
+        for i in range(0, self.max_frames):
+>>>>>>> Stashed changes
             t = i
             if is_single_string:
                 if value.find("'") > -1:

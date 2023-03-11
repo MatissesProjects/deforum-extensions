@@ -25,9 +25,19 @@ from .save_images import save_image
 from .composable_masks import compose_mask_with_check
 from .settings import save_settings_from_animation_run
 from .deforum_controlnet import unpack_controlnet_vids, is_controlnet_enabled
+from modules.shared import interrogator
 # Webui
 from modules.shared import opts, cmd_opts, state, sd_model
 from modules import lowvram, devices, sd_hijack
+from .prompt import check_is_number
+
+
+# Add pairwise implementation here not to upgrade
+# the whole python to 3.10 just for one function
+def pairwise_repl(iterable):
+    a, b = itertools.tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 def render_animation(args, anim_args, video_args, parseq_args, loop_args, controlnet_args, animation_prompts, root):
     # handle hybrid video generation
@@ -369,6 +379,29 @@ def render_animation(args, anim_args, video_args, parseq_args, loop_args, contro
 
         # grab prompt for current frame
         args.prompt = prompt_series[frame_idx]
+
+        parsedImages = {}
+        loop_args.frameToChoose = 0
+        loop_args.jsonImages = json.loads(loopSchedulesAndData.imagesToKeyframe)
+        for key, value in loop_args.jsonImages.items():
+            if check_is_number(key):# default case 0:(1 + t %5), 30:(5-t%2)
+                parsedImages[key] = value
+            else:# math on the left hand side case 0:(1 + t %5), maxKeyframes/2:(5-t%2)
+                parsedImages[int(numexpr.evaluate(key))] = value
+
+        framesToImageSwapOn = list(map(int, list(parsedImages.keys())))
+        
+        for swappingFrame in framesToImageSwapOn[1:]:
+            loop_args.frameToChoose += (frame_idx >= int(swappingFrame))
+        
+        for fs, fe in pairwise_repl(framesToImageSwapOn):
+            if fs <= frame_idx <= fe:
+                loop_args.skipFrame = fe - fs
+        print(f"current prompts {args.prompt}")
+        if loop_args.use_looper and args.prompt == "": # add another ui variable for clip introgate? or just check against ""
+            args.prompt = interrogator.interrogate(load_img(list(loop_args.jsonImages.values())[loop_args.frameToChoose],
+                                                                 shape=(args.W, args.H), 
+                                                                 use_alpha_as_mask=args.use_alpha_as_mask))
         
         if args.seed_behavior == 'schedule' or use_parseq:
             args.seed = int(keys.seed_schedule_series[frame_idx])
